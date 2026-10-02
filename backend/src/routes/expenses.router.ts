@@ -1,4 +1,3 @@
-
 import express from "express";
 import type { Expense } from "../types/expense.ts";
 import { ExpensesService } from "../services/expenses.service.ts";

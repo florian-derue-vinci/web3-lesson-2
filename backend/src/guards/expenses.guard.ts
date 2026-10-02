@@ -1,4 +1,4 @@
-import type { Expense } from "../types/expense.ts";
+import type { Expense } from "../src/types/expense.ts";
 
 export function isValidNewExpense(data: any): data is Expense {
    if (typeof data !== 'object' || data === null) {
