@@ -1,82 +1,73 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Expense } from '../types/Expense';
+import type { Expense, NewExpense } from '../types/Expense';
 
-const host = import.meta.env.VITE_API_URL || 'http://unknown-api-url.com';
-const API_BASE_URL = `${host}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-interface UseExpensesResult {
-  expenses: Expense[];
-  loading: boolean;
-  error: string | null;
-  addExpense: (expense: Expense) => Promise<void>;
-  resetExpenses: () => Promise<void>;
+async function fetchAllExpenses(): Promise<Expense[]> {
+  return fetch(`${API_BASE_URL}/api/expenses`)
+    .then((res) => res.json())
+    .then((data) => (Array.isArray(data) ? (data as Expense[]) : []))
+    .catch((error) => {
+      console.error("Error getting expenses:", error);
+      return [] as Expense[];
+    });
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unknown error';
+async function postExpense(newExpense: NewExpense): Promise<Expense | null> {
+  return fetch(`${API_BASE_URL}/api/expenses`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(newExpense),
+  })
+    .then((res) => res.json())
+    .then((data) => data as Expense)
+    .catch((error) => {
+      console.error("Error adding expense:", error);
+      return null;
+    });
 }
 
-function useExpenses(): UseExpensesResult {
+async function postResetExpenses(): Promise<Expense[]> {
+  return fetch(`${API_BASE_URL}/api/expenses/reset`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+  })
+    .then((res) => res.json())
+    .then((data) => (Array.isArray(data) ? (data as Expense[]) : []))
+    .catch((error) => {
+      console.error("Error resetting expenses:", error);
+      return [] as Expense[];
+    });
+}
+
+function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchExpenses = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`${API_BASE_URL}/expenses`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch expenses (${response.status})`);
-      }
-      const data = (await response.json()) as Expense[];
-      setExpenses(data);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setLoading(false);
+   useEffect(() => {
+    fetchAllExpenses()
+      .then(setExpenses)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const addExpense = useCallback(async (newExpense: NewExpense): Promise<void> => {
+    const created = await postExpense(newExpense);
+    if (created) {
+      setExpenses((prev) => [...prev, created]);
     }
   }, []);
 
-  // Runs once on mount to load the initial expense list.
-  useEffect(() => {
-    fetchExpenses();
-  }, [fetchExpenses]);
+  const resetExpenses = useCallback(async (): Promise<void> => {
+    const updated = await postResetExpenses();
+    setExpenses(updated);
+  }, []);
 
-  const addExpense = useCallback(
-    async (expense: Expense) => {
-      try {
-        setError(null);
-        const response = await fetch(`${API_BASE_URL}/expenses`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(expense),
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to add expense (${response.status})`);
-        }
-        await fetchExpenses();
-      } catch (err) {
-        setError(errorMessage(err));
-      }
-    },
-    [fetchExpenses],
-  );
-
-  const resetExpenses = useCallback(async () => {
-    try {
-      setError(null);
-      const response = await fetch(`${API_BASE_URL}/expenses/reset`, { method: 'POST' });
-      if (!response.ok) {
-        throw new Error(`Failed to reset expenses (${response.status})`);
-      }
-      await fetchExpenses();
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-  }, [fetchExpenses]);
-
-  return { expenses, loading, error, addExpense, resetExpenses };
+  return { expenses, loading, addExpense, resetExpenses };
 }
 
 export default useExpenses;

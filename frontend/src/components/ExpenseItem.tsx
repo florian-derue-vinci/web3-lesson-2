@@ -1,7 +1,3 @@
-/**
- * A simple component to display an expense item
- */
-
 import type { Expense } from "../types/Expense";
 
 interface ExpenseItemProps {
