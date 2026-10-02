@@ -1,58 +1,38 @@
 import fs from "fs";
 import type { Expense, NewExpense } from "../types/expense.ts";
+import { db } from "../prisma/db.ts";
 
 export class ExpensesService {
-
-  private static dataPath = "./data/expenses.json";
-  private static resetPath = "./data/expenses.init.json";
-  
-  public static getExpenses(): Expense[] {
-    return this.readExpenses();
-  }
-  
-  public static addExpense(newExpense: NewExpense): Expense[] {
-    const expenses = this.readExpenses();
-    const expense: Expense = {
-      ...newExpense,
-      id: (expenses.length + 1).toString()
-    };
-    expenses.push(expense);
-    this.saveExpenses(expenses);
-    return expenses;
-  }
-  
-  public static resetExpenses(): Expense[] {
-    this._resetExpenses();
-    return this.readExpenses();
-  }
-  
-  private static readExpenses(): Expense[] {
+  public static async getExpenses(): Promise<Expense[]> {
     try {
-      const data = JSON.parse(fs.readFileSync(this.dataPath, "utf-8"));
-      return data;
+      const rows = await db.orm.public.Expense.all();
+      const expenses = rows.map((row: any) => ({
+        id: row.id.toString(),
+        date: row.date,
+        amount: row.amount,
+        description: row.description,
+        payer: row.payer,
+      }));
+      return expenses;
     } catch (error) {
-      console.error("Error reading expenses file:", error);
+      console.error("Error getting expenses:", error);
       throw error;
     }
   }
   
-  private static saveExpenses(expenses: Expense[]): void {
+  public static async addExpense(newExpense: NewExpense): Promise<Expense> {
     try {
-      fs.writeFileSync(this.dataPath, JSON.stringify(expenses, null, 2));
+      const expense = await db.orm.public.Expense.create(newExpense);
+      return {
+        id: expense.id.toString(),
+        date: expense.date,
+        amount: expense.amount,
+        description: expense.description,
+        payer: expense.payer,
+      };
     } catch (error) {
-      console.error("Error saving expenses file:", error);
+      console.error("Error getting expenses:", error);
       throw error;
     }
   }
-
-  private static _resetExpenses(): void {
-    try {
-      const defaultExpenses: Expense[] = JSON.parse(fs.readFileSync(this.resetPath, "utf-8"));
-      fs.writeFileSync(this.dataPath, JSON.stringify(defaultExpenses, null, 2));
-    } catch (error) {
-      console.error("Error resetting expenses file:", error);
-      throw error;
-    }
-  }
-  
 }

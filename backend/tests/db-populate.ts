@@ -1,4 +1,4 @@
-import { db } from "../src/prisma/db";
+import { db } from "../src/prisma/db.ts";
 
 async function main() {
   const expense = await db.orm.public.Expense.create({
