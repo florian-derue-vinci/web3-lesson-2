@@ -31,7 +31,7 @@ export class ExpensesService {
         payer: expense.payer,
       };
     } catch (error) {
-      console.error("Error getting expenses:", error);
+      console.error("Error adding expenses:", error);
       throw error;
     }
   }
