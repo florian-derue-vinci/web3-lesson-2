@@ -1,23 +1,38 @@
-import type { Expense } from "../types/Expense";
+import { useForm } from "react-hook-form";
+import { ExpenseFormSchema, type NewExpense } from "../types/Expense";
 
 interface ExpenseAddProps {
-  addExpense: (expense: Expense) => void;
+    expenseAdd: (expense: NewExpense) => Promise<void>;
 }
 
-function generateRandomExpense(): Expense {
-  return {
-    id: Math.round(Math.random()*100).toString(),
-    date: "2026-09-18",
-    description: "New random Expense",
-    payer: "New random Payer",
-    amount: Math.random() * 100
-  };
-}
+function ExpenseAdd({ expenseAdd }: ExpenseAddProps) {
+  const { register, handleSubmit, reset} = useForm<NewExpense>();
 
-function ExpenseAdd({ addExpense }: ExpenseAddProps) {
+  const onSubmit = async (e: NewExpense) => {
+    console.log(e);
+    const result = ExpenseFormSchema.safeParse({
+      description: e.description,
+      amount: e.amount,
+      payer: e.payer,
+      date: e.date,
+    })
+
+    if (!result.success) {
+      console.log(result.error.format);
+    } else {
+      await expenseAdd(e);
+    } reset();
+  }
+
   return <div>
-    <h2>Add a new random Expense</h2>
-    <button onClick={() => addExpense(generateRandomExpense())}>Add</button>
+    <h2>Add expense</h2>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input type="text" {...register("description")} placeholder="Description" />
+      <input type="text" {...register("payer")} placeholder="Payer" />
+      <input type="number" {...register("amount", { valueAsNumber: true})} placeholder="Amount" />
+      <input type="date" {...register("date")} placeholder="Date" />
+      <button type="submit" className="btn btn-primary">Add</button>
+    </form>
   </div>;
 }
 

@@ -16,7 +16,7 @@ function Home() {
 
   return <div>
     <h1>Manage your expenses</h1>
-    <ExpenseAdd addExpense={addExpense} />
+    <ExpenseAdd expenseAdd={addExpense} />
     <ExpenseReset onReset={resetExpenses} />
     <h2>Your expenses</h2>
     {expenses.length > 0 && <ExpenseSorter setSortingAlgo={handleAlgoChange} />}
